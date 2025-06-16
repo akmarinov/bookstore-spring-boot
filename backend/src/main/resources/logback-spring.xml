@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Define variables -->
+    <springProfile name="!production">
+        <property name="LOG_LEVEL" value="DEBUG"/>
+        <property name="ROOT_LOG_LEVEL" value="INFO"/>
+    </springProfile>
+    <springProfile name="production">
+        <property name="LOG_LEVEL" value="INFO"/>
+        <property name="ROOT_LOG_LEVEL" value="WARN"/>
+    </springProfile>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <springProfile name="!production">
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+            </springProfile>
+            <springProfile name="production">
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </springProfile>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for All Logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/bookstore-application.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archived/bookstore-application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- File Appender for Error Logs -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/bookstore-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archived/bookstore-error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- File Appender for SQL Logs -->
+    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/bookstore-sql.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archived/bookstore-sql.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>5MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- JSON Appender for Production -->
+    <springProfile name="production">
+        <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/bookstore-json.log</file>
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp/>
+                    <logLevel/>
+                    <loggerName/>
+                    <message/>
+                    <mdc/>
+                    <stackTrace/>
+                </providers>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>logs/archived/bookstore-json.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>50MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>2GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+    </springProfile>
+
+    <!-- Async Appenders for Better Performance -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <!-- Logger Configurations -->
+    
+    <!-- Application Package Logger -->
+    <logger name="com.example.bookstore" level="${LOG_LEVEL}" additivity="false">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR_FILE"/>
+        <springProfile name="production">
+            <appender-ref ref="JSON_FILE"/>
+        </springProfile>
+    </logger>
+
+    <!-- SQL Logging -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+        <springProfile name="development">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+
+    <!-- Spring Framework Loggers -->
+    <logger name="org.springframework.web" level="DEBUG" additivity="false">
+        <springProfile name="development">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <logger name="org.springframework.security" level="DEBUG" additivity="false">
+        <springProfile name="development">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <logger name="org.springframework.data.jpa" level="DEBUG" additivity="false">
+        <springProfile name="development">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- Database Connection Pool Logging -->
+    <logger name="com.zaxxer.hikari" level="INFO" additivity="false">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- Flyway Migration Logging -->
+    <logger name="org.flywaydb" level="INFO" additivity="false">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- Actuator Logging -->
+    <logger name="org.springframework.boot.actuate" level="INFO" additivity="false">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- Third-party Library Loggers -->
+    <logger name="org.apache.tomcat" level="INFO"/>
+    <logger name="org.apache.catalina" level="INFO"/>
+    <logger name="org.eclipse.jetty" level="INFO"/>
+    <logger name="org.hibernate.validator" level="WARN"/>
+    <logger name="org.hibernate.cache" level="WARN"/>
+    <logger name="org.hibernate.engine.internal.StatisticalLoggingSessionEventListener" level="WARN"/>
+
+    <!-- Reduce noise from specific loggers -->
+    <logger name="org.springframework.boot.autoconfigure" level="WARN"/>
+    <logger name="org.springframework.boot.context.config" level="WARN"/>
+    <logger name="org.springframework.boot.web.embedded" level="WARN"/>
+    <logger name="org.springframework.jndi" level="WARN"/>
+
+    <!-- Root Logger -->
+    <root level="${ROOT_LOG_LEVEL}">
+        <springProfile name="!production">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR_FILE"/>
+        <springProfile name="production">
+            <appender-ref ref="JSON_FILE"/>
+        </springProfile>
+    </root>
+
+</configuration>

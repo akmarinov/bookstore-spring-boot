@@ -1,0 +1,91 @@
+# MySQL Production Configuration for Bookstore Application
+# This configuration optimizes MySQL for production workloads
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld]
+# Basic settings
+default_authentication_plugin = mysql_native_password
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+skip-name-resolve = 1
+
+# Connection settings
+max_connections = 200
+max_connect_errors = 100
+wait_timeout = 600
+interactive_timeout = 600
+
+# Buffer pool settings
+innodb_buffer_pool_size = 256M
+innodb_buffer_pool_instances = 1
+innodb_buffer_pool_chunk_size = 128M
+
+# Log settings
+innodb_log_file_size = 64M
+innodb_log_buffer_size = 16M
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT
+
+# Query cache settings
+query_cache_type = 1
+query_cache_size = 32M
+query_cache_limit = 2M
+
+# Table cache settings
+table_open_cache = 2000
+table_definition_cache = 1400
+
+# Thread settings
+thread_cache_size = 50
+thread_stack = 256K
+
+# MyISAM settings
+key_buffer_size = 32M
+myisam_sort_buffer_size = 128M
+myisam_max_sort_file_size = 10G
+
+# Network settings
+max_allowed_packet = 64M
+bind-address = 0.0.0.0
+
+# Performance settings
+innodb_file_per_table = 1
+innodb_stats_on_metadata = 0
+innodb_read_io_threads = 4
+innodb_write_io_threads = 4
+
+# Logging
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
+log_queries_not_using_indexes = 1
+
+# Binary logging (for replication)
+server-id = 1
+log-bin = mysql-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# Error logging
+log-error = /var/log/mysql/error.log
+
+# Security settings
+local-infile = 0
+symbolic-links = 0
+
+# Timezone
+default-time-zone = '+00:00'
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet = 64M
+
+[mysql]
+no-auto-rehash
+
+[isamchk]
+key_buffer_size = 16M

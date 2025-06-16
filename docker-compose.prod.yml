@@ -1,0 +1,292 @@
+version: '3.8'
+
+services:
+  # MySQL Database - Production Configuration
+  mysql:
+    image: mysql:8.0
+    container_name: bookstore-mysql-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-booksdb}
+      MYSQL_USER: ${MYSQL_USER:-bookstore}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+    networks:
+      - bookstore-network
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-name-resolve
+      --max_connections=200
+      --innodb_buffer_pool_size=256M
+      --innodb_log_file_size=64M
+      --query_cache_type=1
+      --query_cache_size=32M
+      --slow_query_log=1
+      --slow_query_log_file=/var/log/mysql/slow.log
+      --long_query_time=2
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Spring Boot Backend - Production Configuration
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        - BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - VCS_REF=${VCS_REF:-$(git rev-parse --short HEAD)}
+    image: bookstore/backend:${APP_VERSION:-latest}
+    container_name: bookstore-backend-prod
+    restart: always
+    environment:
+      # Database configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-booksdb}
+      DB_USERNAME: ${MYSQL_USER:-bookstore}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      # Spring profiles
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # JVM settings for production
+      JAVA_OPTS: >-
+        -server
+        -Xms512m 
+        -Xmx1024m 
+        -XX:+UseContainerSupport 
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -XX:+UseG1GC
+        -XX:+UseStringDeduplication
+        -XX:+DisableExplicitGC
+        -XX:+AlwaysPreTouch
+        -Djava.security.egd=file:/dev/./urandom
+        -Dfile.encoding=UTF-8
+        -Duser.timezone=UTC
+        
+      # Application settings
+      SERVER_PORT: 8080
+      MANAGEMENT_SERVER_PORT: 8081
+      
+      # Security settings
+      MANAGEMENT_ENDPOINTS_EXPOSURE: health,info,metrics,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when_authorized
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_EXAMPLE_BOOKSTORE: INFO
+      
+      # Performance settings
+      SERVER_TOMCAT_MAX_THREADS: 200
+      SERVER_TOMCAT_MIN_SPARE_THREADS: 10
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: false
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+      - "${BACKEND_MGMT_PORT:-8081}:8081"
+    volumes:
+      - backend_logs:/app/logs
+    networks:
+      - bookstore-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/health-check.sh"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # React Frontend - Production Configuration  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        - BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - VCS_REF=${VCS_REF:-$(git rev-parse --short HEAD)}
+    image: bookstore/frontend:${APP_VERSION:-latest}
+    container_name: bookstore-frontend-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      NGINX_PORT: 80
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - bookstore-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/health-check.sh"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # Nginx Reverse Proxy (Optional - for load balancing)
+  nginx-proxy:
+    image: nginx:1.27-alpine
+    container_name: bookstore-nginx-proxy
+    restart: always
+    ports:
+      - "${PROXY_HTTP_PORT:-80}:80"
+      - "${PROXY_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - bookstore-network
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 32M
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching (Optional)
+  redis:
+    image: redis:7.2-alpine
+    container_name: bookstore-redis-prod
+    restart: always
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 128mb 
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - bookstore-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/mysql
+  backend_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOGS_PATH:-./logs}/backend
+  nginx_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOGS_PATH:-./logs}/nginx
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}/redis
+
+networks:
+  bookstore-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: bookstore-br0
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

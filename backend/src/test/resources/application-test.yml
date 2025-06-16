@@ -1,0 +1,95 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+    hikari:
+      pool-name: BookstoreHikariCP-Test
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 30000
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    show-sql: true
+    open-in-view: false
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 0  # Random port for tests
+
+logging:
+  level:
+    com.example.bookstore: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.test: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+  health:
+    defaults:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 1MB
+    db:
+      enabled: true
+  metrics:
+    enabled: true
+    tags:
+      application: bookstore-backend
+      environment: test
+      version: '@project.version@'
+
+# Info endpoint configuration for tests
+info:
+  app:
+    name: Bookstore Backend API
+    description: A comprehensive bookstore management system with Spring Boot (Test)
+    version: '@project.version@'
+    environment: test
+
+# CORS configuration for tests
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:3001,http://localhost:5173
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: Origin,Content-Type,Accept,Authorization,X-Requested-With,Cache-Control
+    exposed-headers: X-Total-Count,X-Page-Count
+    allow-credentials: true
+    max-age: 3600
+  security:
+    enable-csrf: false
+    public-endpoints: /api/books/**,/api/health,/swagger-ui/**,/api-docs/**,/actuator/**
+
+# Test-specific settings
+spring.test.database.replace: none

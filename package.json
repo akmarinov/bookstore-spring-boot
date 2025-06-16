@@ -1,0 +1,85 @@
+{
+  "name": "bookstore-spring-boot",
+  "version": "1.0.0",
+  "description": "Full-stack bookstore application with Spring Boot backend and React frontend",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && mvn spring-boot:run -Pdev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start": "npm run dev",
+    "build": "./build.sh prod",
+    "build:dev": "./build.sh dev",
+    "build:test": "./build.sh test",
+    "build:prod": "./build.sh prod",
+    "build:clean": "CLEAN_BUILD=true ./build.sh prod",
+    "build:no-tests": "SKIP_TESTS=true ./build.sh prod",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && mvn test",
+    "test:frontend": "cd frontend && npm run test:run",
+    "test:coverage": "npm run test:backend && npm run test:frontend:coverage",
+    "test:frontend:coverage": "cd frontend && npm run test:coverage",
+    "lint": "npm run lint:frontend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:fix": "npm run lint:frontend:fix",
+    "lint:frontend:fix": "cd frontend && npm run lint:fix",
+    "format": "npm run format:frontend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:check": "npm run format:frontend:check",
+    "format:frontend:check": "cd frontend && npm run format:check",
+    "type-check": "npm run type-check:frontend",
+    "type-check:frontend": "cd frontend && npm run type-check",
+    "clean": "npm run clean:backend && npm run clean:frontend && npm run clean:dist",
+    "clean:backend": "cd backend && mvn clean",
+    "clean:frontend": "cd frontend && npm run clean",
+    "clean:dist": "rm -rf dist",
+    "clean:all": "npm run clean && cd frontend && npm run clean:deps",
+    "install:frontend": "cd frontend && npm ci",
+    "install:all": "npm run install:frontend",
+    "validate": "npm run validate:backend && npm run validate:frontend",
+    "validate:backend": "cd backend && mvn validate",
+    "validate:frontend": "cd frontend && npm run validate",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --rmi all",
+    "prepare": "npm run install:all",
+    "postinstall": "npm run install:frontend",
+    "health-check": "./dist/scripts/health-check.sh || echo 'Run build first to create health check script'",
+    "start:prod": "./dist/scripts/start-backend.sh || echo 'Run build first to create start script'",
+    "stop:prod": "./dist/scripts/stop-backend.sh || echo 'Run build first to create stop script'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/bookstore-spring-boot.git"
+  },
+  "keywords": [
+    "spring-boot",
+    "react",
+    "typescript",
+    "java",
+    "bookstore",
+    "full-stack",
+    "maven",
+    "vite",
+    "mysql"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/bookstore-spring-boot/issues"
+  },
+  "homepage": "https://github.com/yourusername/bookstore-spring-boot#readme"
+}

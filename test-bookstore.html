@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookstore Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .search-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .book-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .book-card:hover {
+            transform: translateY(-2px);
+        }
+        .book-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .book-author {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .book-price {
+            font-size: 1.1em;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .search-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .add-book-button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .book-actions {
+            margin-top: 15px;
+        }
+        .edit-button, .delete-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .edit-button {
+            background: #f39c12;
+            color: white;
+        }
+        .delete-button {
+            background: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 Bookstore Management System</h1>
+        <p>Manage your book inventory with ease</p>
+    </div>
+
+    <div class="search-section">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search books by title, author, or ISBN...">
+        <button id="searchButton" class="search-button">Search</button>
+    </div>
+
+    <button id="addBookButton" class="add-book-button">+ Add New Book</button>
+
+    <div id="bookGrid" class="book-grid">
+        <!-- Sample books for testing -->
+        <div class="book-card" data-book-id="1">
+            <div class="book-title">The Great Gatsby</div>
+            <div class="book-author">by F. Scott Fitzgerald</div>
+            <div class="book-details">
+                <p><strong>ISBN:</strong> 978-0-7432-7356-5</p>
+                <p><strong>Year:</strong> 1925</p>
+                <p><strong>Genre:</strong> Fiction</p>
+                <p><strong>Stock:</strong> 15 copies</p>
+            </div>
+            <div class="book-price">$12.99</div>
+            <div class="book-actions">
+                <button class="edit-button">Edit</button>
+                <button class="delete-button">Delete</button>
+            </div>
+        </div>
+
+        <div class="book-card" data-book-id="2">
+            <div class="book-title">To Kill a Mockingbird</div>
+            <div class="book-author">by Harper Lee</div>
+            <div class="book-details">
+                <p><strong>ISBN:</strong> 978-0-06-112008-4</p>
+                <p><strong>Year:</strong> 1960</p>
+                <p><strong>Genre:</strong> Fiction</p>
+                <p><strong>Stock:</strong> 8 copies</p>
+            </div>
+            <div class="book-price">$14.99</div>
+            <div class="book-actions">
+                <button class="edit-button">Edit</button>
+                <button class="delete-button">Delete</button>
+            </div>
+        </div>
+
+        <div class="book-card" data-book-id="3">
+            <div class="book-title">1984</div>
+            <div class="book-author">by George Orwell</div>
+            <div class="book-details">
+                <p><strong>ISBN:</strong> 978-0-452-28423-4</p>
+                <p><strong>Year:</strong> 1949</p>
+                <p><strong>Genre:</strong> Dystopian Fiction</p>
+                <p><strong>Stock:</strong> 12 copies</p>
+            </div>
+            <div class="book-price">$13.99</div>
+            <div class="book-actions">
+                <button class="edit-button">Edit</button>
+                <button class="delete-button">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple search functionality
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const bookCards = document.querySelectorAll('.book-card');
+            
+            bookCards.forEach(card => {
+                const title = card.querySelector('.book-title').textContent.toLowerCase();
+                const author = card.querySelector('.book-author').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Add book button
+        document.getElementById('addBookButton').addEventListener('click', function() {
+            alert('Add Book functionality would open a form to add a new book');
+        });
+
+        // Edit and delete buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-button')) {
+                const bookCard = e.target.closest('.book-card');
+                const bookId = bookCard.getAttribute('data-book-id');
+                const title = bookCard.querySelector('.book-title').textContent;
+                alert(`Edit functionality for: ${title} (ID: ${bookId})`);
+            }
+            
+            if (e.target.classList.contains('delete-button')) {
+                const bookCard = e.target.closest('.book-card');
+                const bookId = bookCard.getAttribute('data-book-id');
+                const title = bookCard.querySelector('.book-title').textContent;
+                if (confirm(`Are you sure you want to delete: ${title}?`)) {
+                    bookCard.remove();
+                }
+            }
+        });
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchButton').click();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  # Java configuration
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+  
+  # Node.js configuration
+  NODE_VERSION: '18'
+  
+  # Build configuration
+  MAVEN_OPTS: '-Xmx1024m'
+  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version'
+
+jobs:
+  # Environment validation and setup
+  setup:
+    name: Setup and Validation
+    runs-on: ubuntu-latest
+    outputs:
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      should-deploy: ${{ steps.deployment.outputs.should-deploy }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'build.sh'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - 'build.sh'
+              - '.github/workflows/**'
+      
+      - name: Determine deployment
+        id: deployment
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Validate environment
+        run: |
+          echo "Environment validation would run here"
+          echo "Java version: $JAVA_VERSION"
+          echo "Node version: $NODE_VERSION"
+
+  # Backend build and test
+  backend:
+    name: Backend (Java/Spring Boot)
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.backend-changed == 'true' || github.event_name == 'workflow_dispatch'
+    
+    strategy:
+      matrix:
+        profile: [test, prod]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      
+      - name: Validate Maven project
+        working-directory: ./backend
+        run: mvn ${{ env.MAVEN_CLI_OPTS }} validate
+      
+      - name: Compile backend
+        working-directory: ./backend
+        run: mvn ${{ env.MAVEN_CLI_OPTS }} compile -P${{ matrix.profile }}
+      
+      - name: Run backend tests
+        working-directory: ./backend
+        run: mvn ${{ env.MAVEN_CLI_OPTS }} test -P${{ matrix.profile }}
+      
+      - name: Run integration tests
+        working-directory: ./backend
+        run: mvn ${{ env.MAVEN_CLI_OPTS }} verify -P${{ matrix.profile }}
+      
+      - name: Generate test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Backend Tests (${{ matrix.profile }})
+          path: backend/target/surefire-reports/*.xml
+          reporter: java-junit
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: backend-test-results-${{ matrix.profile }}
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+            backend/target/site/jacoco/
+      
+      - name: Build JAR
+        if: matrix.profile == 'prod'
+        working-directory: ./backend
+        run: mvn ${{ env.MAVEN_CLI_OPTS }} package -DskipTests -Pprod
+      
+      - name: Upload JAR artifact
+        if: matrix.profile == 'prod'
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+
+  # Frontend build and test
+  frontend:
+    name: Frontend (React/TypeScript)
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.frontend-changed == 'true' || github.event_name == 'workflow_dispatch'
+    
+    strategy:
+      matrix:
+        environment: [development, test, production]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Type check
+        working-directory: ./frontend
+        run: npm run type-check
+      
+      - name: Lint code
+        working-directory: ./frontend
+        run: npm run lint
+      
+      - name: Format check
+        working-directory: ./frontend
+        run: npm run format:check
+      
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm run test:ci
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: frontend-test-results-${{ matrix.environment }}
+          path: |
+            frontend/coverage/
+            frontend/test-results.xml
+      
+      - name: Build frontend
+        working-directory: ./frontend
+        run: |
+          case "${{ matrix.environment }}" in
+            "development") npm run build:dev ;;
+            "test") npm run build:test ;;
+            "production") npm run build:prod ;;
+          esac
+      
+      - name: Upload build artifact
+        if: matrix.environment == 'production'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+  # Security scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: setup
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run backend security scan
+        working-directory: ./backend
+        run: |
+          # Add OWASP dependency check or similar
+          echo "Backend security scanning would run here"
+          mvn ${{ env.MAVEN_CLI_OPTS }} validate
+      
+      - name: Run frontend security scan
+        working-directory: ./frontend
+        run: |
+          # Add npm audit and other security checks
+          npm audit --audit-level moderate
+          echo "Frontend security scanning completed"
+
+  # Full application build
+  build:
+    name: Full Application Build
+    runs-on: ubuntu-latest
+    needs: [setup, backend, frontend]
+    if: always() && (needs.backend.result == 'success' || needs.backend.result == 'skipped') && (needs.frontend.result == 'success' || needs.frontend.result == 'skipped')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Install concurrently
+        run: npm install -g concurrently
+      
+      - name: Run full build
+        run: |
+          chmod +x build.sh
+          SKIP_TESTS=true ./build.sh prod
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: full-application-build
+          path: |
+            dist/
+            !dist/**/*.log
+
+  # Deployment (placeholder)
+  deploy:
+    name: Deploy to Environment
+    runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: needs.setup.outputs.should-deploy == 'true' && needs.build.result == 'success'
+    environment: production
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: full-application-build
+          path: ./dist
+      
+      - name: Deploy application
+        run: |
+          echo "Deployment would happen here"
+          echo "Artifacts available in ./dist"
+          ls -la ./dist
+      
+      - name: Health check
+        run: |
+          echo "Post-deployment health check would run here"
+
+  # Notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [setup, backend, frontend, security, build, deploy]
+    if: always()
+    
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [[ "${{ needs.build.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=Build completed successfully" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Build failed" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Send notification
+        run: |
+          echo "Status: ${{ steps.status.outputs.status }}"
+          echo "Message: ${{ steps.status.outputs.message }}"
+          echo "Notification would be sent here (Slack, email, etc.)"

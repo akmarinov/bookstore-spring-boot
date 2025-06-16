@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: bookstore-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bookstore_db}
+      MYSQL_USER: ${MYSQL_USER:-bookstore}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-bookstore123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - bookstore-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 60s
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: bookstore-backend-dev
+    restart: unless-stopped
+    environment:
+      # Database configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-bookstore_db}
+      DB_USERNAME: ${MYSQL_USER:-bookstore}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-bookstore123}
+      
+      # Spring profiles
+      SPRING_PROFILES_ACTIVE: dev
+      
+      # JVM settings
+      JAVA_OPTS: >-
+        -Xms256m 
+        -Xmx512m 
+        -XX:+UseContainerSupport 
+        -XX:MaxRAMPercentage=75.0
+        
+      # Application settings
+      SERVER_PORT: 8080
+      MANAGEMENT_SERVER_PORT: 8081
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_EXAMPLE_BOOKSTORE: DEBUG
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+      - "${BACKEND_MGMT_PORT:-8081}:8081"
+    volumes:
+      - backend_logs:/app/logs
+    networks:
+      - bookstore-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/health-check.sh"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 60s
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: bookstore-frontend-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NGINX_PORT: 80
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - bookstore-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/health-check.sh"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 30s
+
+  # PhpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: bookstore-phpmyadmin-dev
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-bookstore}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-bookstore123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - bookstore-network
+
+volumes:
+  mysql_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  bookstore-network:
+    driver: bridge
