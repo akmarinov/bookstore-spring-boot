@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useBook } from '../../hooks/useBook';
 import { bookApi } from '../../api/bookApi';
 import { mockBook } from '../../test/mocks/mockData';
@@ -60,7 +60,9 @@ describe('useBook', () => {
     it('fetches book successfully', async () => {
       const { result } = renderHook(() => useBook());
 
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
 
       expect(mockGetBookById).toHaveBeenCalledWith(1);
       expect(result.current.book).toEqual(mockBook);
@@ -74,7 +76,9 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe(errorMessage);
@@ -93,12 +97,17 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      const fetchPromise = result.current.fetchBook(1);
+      let fetchPromise: Promise<void>;
+      act(() => {
+        fetchPromise = result.current.fetchBook(1);
+      });
       
       expect(result.current.loading).toBe(true);
 
-      resolvePromise!(mockBook);
-      await fetchPromise;
+      await act(async () => {
+        resolvePromise!(mockBook);
+        await fetchPromise;
+      });
 
       expect(result.current.loading).toBe(false);
     });
@@ -119,7 +128,10 @@ describe('useBook', () => {
     it('creates book successfully', async () => {
       const { result } = renderHook(() => useBook());
 
-      const createdBook = await result.current.createBook(mockBookFormData);
+      let createdBook;
+      await act(async () => {
+        createdBook = await result.current.createBook(mockBookFormData);
+      });
 
       expect(mockCreateBook).toHaveBeenCalledWith(mockBookFormData);
       expect(createdBook).toEqual(mockBook);
@@ -134,7 +146,9 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      await expect(result.current.createBook(mockBookFormData)).rejects.toThrow(errorMessage);
+      await act(async () => {
+        await expect(result.current.createBook(mockBookFormData)).rejects.toThrow(errorMessage);
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe(errorMessage);
@@ -152,12 +166,17 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      const createPromise = result.current.createBook(mockBookFormData);
+      let createPromise: Promise<any>;
+      act(() => {
+        createPromise = result.current.createBook(mockBookFormData);
+      });
       
       expect(result.current.loading).toBe(true);
 
-      resolvePromise!(mockBook);
-      await createPromise;
+      await act(async () => {
+        resolvePromise!(mockBook);
+        await createPromise;
+      });
 
       expect(result.current.loading).toBe(false);
     });
@@ -178,7 +197,10 @@ describe('useBook', () => {
     it('updates book successfully', async () => {
       const { result } = renderHook(() => useBook());
 
-      const updatedBook = await result.current.updateBook(1, mockBookFormData);
+      let updatedBook;
+      await act(async () => {
+        updatedBook = await result.current.updateBook(1, mockBookFormData);
+      });
 
       expect(mockUpdateBook).toHaveBeenCalledWith(1, mockBookFormData);
       expect(updatedBook).toEqual(mockBook);
@@ -193,7 +215,9 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      await expect(result.current.updateBook(1, mockBookFormData)).rejects.toThrow(errorMessage);
+      await act(async () => {
+        await expect(result.current.updateBook(1, mockBookFormData)).rejects.toThrow(errorMessage);
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe(errorMessage);
@@ -211,12 +235,17 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      const updatePromise = result.current.updateBook(1, mockBookFormData);
+      let updatePromise: Promise<any>;
+      act(() => {
+        updatePromise = result.current.updateBook(1, mockBookFormData);
+      });
       
       expect(result.current.loading).toBe(true);
 
-      resolvePromise!(mockBook);
-      await updatePromise;
+      await act(async () => {
+        resolvePromise!(mockBook);
+        await updatePromise;
+      });
 
       expect(result.current.loading).toBe(false);
     });
@@ -227,11 +256,15 @@ describe('useBook', () => {
       const { result } = renderHook(() => useBook());
 
       // Set a book first
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
       expect(result.current.book).toEqual(mockBook);
 
       // Delete the book
-      await result.current.deleteBook(1);
+      await act(async () => {
+        await result.current.deleteBook(1);
+      });
 
       expect(mockDeleteBook).toHaveBeenCalledWith(1);
       expect(result.current.book).toBe(null);
@@ -245,7 +278,9 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      await expect(result.current.deleteBook(1)).rejects.toThrow(errorMessage);
+      await act(async () => {
+        await expect(result.current.deleteBook(1)).rejects.toThrow(errorMessage);
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe(errorMessage);
@@ -263,12 +298,17 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      const deletePromise = result.current.deleteBook(1);
+      let deletePromise: Promise<void>;
+      act(() => {
+        deletePromise = result.current.deleteBook(1);
+      });
       
       expect(result.current.loading).toBe(true);
 
-      resolvePromise!(undefined);
-      await deletePromise;
+      await act(async () => {
+        resolvePromise!(undefined);
+        await deletePromise;
+      });
 
       expect(result.current.loading).toBe(false);
     });
@@ -280,13 +320,17 @@ describe('useBook', () => {
 
       // First operation with error
       mockGetBookById.mockRejectedValueOnce(new Error('Network error'));
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
 
       expect(result.current.error).toBe('Network error');
 
       // Second operation successful
       mockGetBookById.mockResolvedValue(mockBook);
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
 
       expect(result.current.error).toBe(null);
       expect(result.current.book).toEqual(mockBook);
@@ -297,7 +341,9 @@ describe('useBook', () => {
 
       const { result } = renderHook(() => useBook());
 
-      await result.current.fetchBook(1);
+      await act(async () => {
+        await result.current.fetchBook(1);
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe('Failed to fetch book');

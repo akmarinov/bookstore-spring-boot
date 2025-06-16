@@ -187,13 +187,13 @@ class BookServicePerformanceTest {
         long startTime = System.currentTimeMillis();
         
         for (Long bookId : bookIds) {
-            Book updateData = TestDataBuilder.aBook()
-                    .withTitle("Updated Book " + bookId)
-                    .withAuthor("Updated Author " + bookId)
-                    .withStockQuantity(20)
-                    .build();
-            
-            bookService.updateBook(bookId, updateData);
+            Book existingBook = bookService.getBookById(bookId).orElse(null);
+            if (existingBook != null) {
+                existingBook.setTitle("Updated Book " + bookId);
+                existingBook.setAuthor("Updated Author " + bookId);
+                existingBook.setStockQuantity(20);
+                bookService.updateBook(bookId, existingBook);
+            }
         }
 
         long endTime = System.currentTimeMillis();
@@ -242,11 +242,12 @@ class BookServicePerformanceTest {
             } else if (i % 4 == 3 && !bookIds.isEmpty()) {
                 // UPDATE operation
                 Long randomId = bookIds.get((int) (Math.random() * bookIds.size()));
-                Book updateData = TestDataBuilder.aBook()
-                        .withTitle("Updated Mixed Book " + i)
-                        .withStockQuantity(25)
-                        .build();
-                bookService.updateBook(randomId, updateData);
+                Book existingBook = bookService.getBookById(randomId).orElse(null);
+                if (existingBook != null) {
+                    existingBook.setTitle("Updated Mixed Book " + i);
+                    existingBook.setStockQuantity(25);
+                    bookService.updateBook(randomId, existingBook);
+                }
                 
             } else if (i % 4 == 0 && !bookIds.isEmpty()) {
                 // DELETE operation (occasionally)

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useBooks } from '../../hooks/useBooks';
 import { bookApi } from '../../api/bookApi';
 import { mockPaginatedResponse, mockBooks } from '../../test/mocks/mockData';
@@ -58,7 +58,9 @@ describe('useBooks', () => {
     expect(result.current.loading).toBe(false);
 
     const params = { page: 0, size: 10 };
-    await result.current.fetchBooks(params);
+    await act(async () => {
+      await result.current.fetchBooks(params);
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(params);
     expect(result.current.books).toEqual(mockBooks);
@@ -71,7 +73,9 @@ describe('useBooks', () => {
 
     const { result } = renderHook(() => useBooks());
 
-    await result.current.fetchBooks({ page: 0, size: 10 });
+    await act(async () => {
+      await result.current.fetchBooks({ page: 0, size: 10 });
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe(errorMessage);
@@ -90,12 +94,17 @@ describe('useBooks', () => {
 
     const { result } = renderHook(() => useBooks());
 
-    const fetchPromise = result.current.fetchBooks({ page: 0, size: 10 });
+    let fetchPromise: Promise<void>;
+    act(() => {
+      fetchPromise = result.current.fetchBooks({ page: 0, size: 10 });
+    });
     
     expect(result.current.loading).toBe(true);
 
-    resolvePromise!(mockPaginatedResponse);
-    await fetchPromise;
+    await act(async () => {
+      resolvePromise!(mockPaginatedResponse);
+      await fetchPromise;
+    });
 
     expect(result.current.loading).toBe(false);
   });
@@ -104,14 +113,20 @@ describe('useBooks', () => {
     const { result } = renderHook(() => useBooks());
 
     const params1 = { page: 0, size: 10, category: 'Fiction' };
-    await result.current.fetchBooks(params1);
+    await act(async () => {
+      await result.current.fetchBooks(params1);
+    });
 
     const params2 = { page: 1, size: 5, search: 'test' };
-    await result.current.fetchBooks(params2);
+    await act(async () => {
+      await result.current.fetchBooks(params2);
+    });
 
     vi.clearAllMocks();
 
-    await result.current.refetch();
+    await act(async () => {
+      await result.current.refetch();
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(params2);
   });
@@ -126,7 +141,9 @@ describe('useBooks', () => {
 
     vi.clearAllMocks();
 
-    await result.current.refetch();
+    await act(async () => {
+      await result.current.refetch();
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(initialParams);
   });
@@ -135,7 +152,9 @@ describe('useBooks', () => {
     const { result } = renderHook(() => useBooks());
 
     const params = { page: 0, size: 10, search: 'gatsby' };
-    await result.current.fetchBooks(params);
+    await act(async () => {
+      await result.current.fetchBooks(params);
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(params);
   });
@@ -144,7 +163,9 @@ describe('useBooks', () => {
     const { result } = renderHook(() => useBooks());
 
     const params = { page: 0, size: 10, category: 'Fiction' };
-    await result.current.fetchBooks(params);
+    await act(async () => {
+      await result.current.fetchBooks(params);
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(params);
   });
@@ -159,7 +180,9 @@ describe('useBooks', () => {
       search: 'test',
       sort: 'title'
     };
-    await result.current.fetchBooks(params);
+    await act(async () => {
+      await result.current.fetchBooks(params);
+    });
 
     expect(mockGetBooks).toHaveBeenCalledWith(params);
   });
@@ -169,13 +192,17 @@ describe('useBooks', () => {
 
     // First fetch with error
     mockGetBooks.mockRejectedValueOnce(new Error('Network error'));
-    await result.current.fetchBooks({ page: 0, size: 10 });
+    await act(async () => {
+      await result.current.fetchBooks({ page: 0, size: 10 });
+    });
 
     expect(result.current.error).toBe('Network error');
 
     // Second fetch successful
     mockGetBooks.mockResolvedValue(mockPaginatedResponse);
-    await result.current.fetchBooks({ page: 0, size: 10 });
+    await act(async () => {
+      await result.current.fetchBooks({ page: 0, size: 10 });
+    });
 
     expect(result.current.error).toBe(null);
     expect(result.current.books).toEqual(mockBooks);
@@ -185,12 +212,16 @@ describe('useBooks', () => {
     const { result } = renderHook(() => useBooks());
 
     // First successful fetch
-    await result.current.fetchBooks({ page: 0, size: 10 });
+    await act(async () => {
+      await result.current.fetchBooks({ page: 0, size: 10 });
+    });
     expect(result.current.books).toEqual(mockBooks);
 
     // Then failed fetch
     mockGetBooks.mockRejectedValue(new Error('Network error'));
-    await result.current.fetchBooks({ page: 0, size: 10 });
+    await act(async () => {
+      await result.current.fetchBooks({ page: 0, size: 10 });
+    });
 
     expect(result.current.books).toEqual([]);
   });

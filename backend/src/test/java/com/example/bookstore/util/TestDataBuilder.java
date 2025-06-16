@@ -13,23 +13,26 @@ import java.time.LocalDateTime;
  */
 public class TestDataBuilder {
 
+    private static long isbnCounter = 1;
+    
     public static class BookBuilder {
         private Book book;
 
         public BookBuilder() {
             this.book = new Book();
-            // Set default values
-            this.book.setTitle("Test Book");
-            this.book.setAuthor("Test Author");
+            // Set default values with unique ISBN
+            long counter = isbnCounter++;
+            this.book.setTitle("Test Book " + counter);
+            this.book.setAuthor("Test Author " + counter);
             this.book.setPrice(new BigDecimal("19.99"));
-            this.book.setIsbn("978-0-123-45678-9");
-            this.book.setDescription("Test description");
+            this.book.setIsbn(generateUniqueIsbn(counter));
+            this.book.setDescription("Test description " + counter);
             this.book.setCategory("Fiction");
             this.book.setPublisher("Test Publisher");
             this.book.setPublicationDate(LocalDate.of(2023, 1, 1));
             this.book.setPages(200);
             this.book.setStockQuantity(10);
-            this.book.setImageUrl("https://example.com/test-book.jpg");
+            this.book.setImageUrl("https://example.com/test-book-" + counter + ".jpg");
             this.book.setCreatedAt(LocalDateTime.now());
             this.book.setUpdatedAt(LocalDateTime.now());
         }
@@ -119,18 +122,19 @@ public class TestDataBuilder {
 
         public BookCreateRequestBuilder() {
             this.request = new BookCreateRequest();
-            // Set default values
-            this.request.setTitle("Test Book");
-            this.request.setAuthor("Test Author");
+            // Set default values with unique ISBN
+            long counter = isbnCounter++;
+            this.request.setTitle("Test Book " + counter);
+            this.request.setAuthor("Test Author " + counter);
             this.request.setPrice(new BigDecimal("19.99"));
-            this.request.setIsbn("978-0-123-45678-9");
-            this.request.setDescription("Test description");
+            this.request.setIsbn(generateUniqueIsbn(counter));
+            this.request.setDescription("Test description " + counter);
             this.request.setCategory("Fiction");
             this.request.setPublisher("Test Publisher");
             this.request.setPublicationDate(LocalDate.of(2023, 1, 1));
             this.request.setPages(200);
             this.request.setStockQuantity(10);
-            this.request.setImageUrl("https://example.com/test-book.jpg");
+            this.request.setImageUrl("https://example.com/test-book-" + counter + ".jpg");
         }
 
         public BookCreateRequestBuilder withTitle(String title) {
@@ -203,18 +207,19 @@ public class TestDataBuilder {
 
         public BookUpdateRequestBuilder() {
             this.request = new BookUpdateRequest();
-            // Set default values
-            this.request.setTitle("Updated Test Book");
-            this.request.setAuthor("Updated Test Author");
+            // Set default values with unique ISBN
+            long counter = isbnCounter++;
+            this.request.setTitle("Updated Test Book " + counter);
+            this.request.setAuthor("Updated Test Author " + counter);
             this.request.setPrice(new BigDecimal("29.99"));
-            this.request.setIsbn("978-0-123-45678-0");
-            this.request.setDescription("Updated test description");
+            this.request.setIsbn(generateUniqueIsbn(counter));
+            this.request.setDescription("Updated test description " + counter);
             this.request.setCategory("Non-Fiction");
             this.request.setPublisher("Updated Test Publisher");
             this.request.setPublicationDate(LocalDate.of(2023, 6, 1));
             this.request.setPages(300);
             this.request.setStockQuantity(15);
-            this.request.setImageUrl("https://example.com/updated-test-book.jpg");
+            this.request.setImageUrl("https://example.com/updated-test-book-" + counter + ".jpg");
         }
 
         public BookUpdateRequestBuilder withTitle(String title) {
@@ -282,6 +287,12 @@ public class TestDataBuilder {
         }
     }
 
+    // Helper method to generate unique ISBN
+    private static String generateUniqueIsbn(long counter) {
+        // Generate a valid-looking ISBN with unique suffix
+        return String.format("978-0-123-%05d-%d", (counter % 100000), (counter % 10));
+    }
+    
     // Static factory methods
     public static BookBuilder aBook() {
         return new BookBuilder();
