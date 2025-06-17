@@ -36,7 +36,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BookController.class)
+@WebMvcTest(controllers = BookController.class, excludeAutoConfiguration = {
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+})
 @ActiveProfiles("test")
 @DisplayName("BookController Tests")
 class BookControllerTest {

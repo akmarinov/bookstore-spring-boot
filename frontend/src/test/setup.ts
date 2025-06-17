@@ -1,7 +1,45 @@
 import '@testing-library/jest-dom';
-import { beforeAll, afterEach, afterAll } from 'vitest';
+import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './mocks/server';
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+  length: 0,
+  key: vi.fn(),
+};
+
+// Mock window.location
+const locationMock = {
+  href: 'http://localhost:3000',
+  origin: 'http://localhost:3000',
+  protocol: 'http:',
+  host: 'localhost:3000',
+  hostname: 'localhost',
+  port: '3000',
+  pathname: '/',
+  search: '',
+  hash: '',
+  reload: vi.fn(),
+  replace: vi.fn(),
+  assign: vi.fn(),
+};
+
+// Setup localStorage mock
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});
+
+// Setup location mock
+Object.defineProperty(window, 'location', {
+  value: locationMock,
+  writable: true,
+});
 
 // Start MSW server before all tests
 beforeAll(() => server.listen());

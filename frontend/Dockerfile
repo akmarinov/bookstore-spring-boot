@@ -79,10 +79,7 @@ RUN echo "pid /tmp/nginx.pid;" > /etc/nginx/nginx.conf && \
     echo "    keepalive_timeout 65;" >> /etc/nginx/nginx.conf && \
     echo "    types_hash_max_size 2048;" >> /etc/nginx/nginx.conf && \
     echo "    client_max_body_size 16M;" >> /etc/nginx/nginx.conf && \
-    echo "    # Logging format" >> /etc/nginx/nginx.conf && \
-    echo "    log_format combined '\$remote_addr - \$remote_user [\$time_local] \"' >> /etc/nginx/nginx.conf && \
-    echo "                       '\$request\" \$status \$body_bytes_sent \"' >> /etc/nginx/nginx.conf && \
-    echo "                       '\$http_referer\" \"\$http_user_agent\"';" >> /etc/nginx/nginx.conf && \
+    echo "    # Use default nginx log format" >> /etc/nginx/nginx.conf && \
     echo "    # Include server configurations" >> /etc/nginx/nginx.conf && \
     echo "    include /etc/nginx/conf.d/*.conf;" >> /etc/nginx/nginx.conf && \
     echo "}" >> /etc/nginx/nginx.conf
