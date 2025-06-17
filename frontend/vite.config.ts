@@ -44,4 +44,11 @@ export default defineConfig({
     __DEV__: false,
     __PROD__: true,
   },
+
+  // Test configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+  },
 });
