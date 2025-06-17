@@ -8,12 +8,24 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    target: 'es2020',
+    minify: false, // Disable minification to debug
+    target: 'es2015', // Use more compatible target
     rollupOptions: {
       output: {
-        manualChunks: undefined, // Disable manual chunking to avoid React loading issues
+        manualChunks: undefined,
+        // Ensure proper module format
+        format: 'es',
+        // Prevent tree-shaking React
+        preserveModules: false,
       }
     }
+  },
+
+  esbuild: {
+    // Ensure JSX is handled properly
+    jsx: 'transform',
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
   },
 
   server: {

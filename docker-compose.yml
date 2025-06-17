@@ -39,8 +39,8 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: ${MYSQL_DATABASE:-bookstore_db}
-      DB_USERNAME: ${MYSQL_USER:-bookstore}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-bookstore123}
+      DB_USERNAME: ${MYSQL_USER:-root}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-password}
       
       # Spring profiles
       SPRING_PROFILES_ACTIVE: dev
@@ -61,7 +61,7 @@ services:
       LOGGING_LEVEL_COM_EXAMPLE_BOOKSTORE: DEBUG
     ports:
       - "${BACKEND_PORT:-8080}:8080"
-      - "${BACKEND_MGMT_PORT:-8081}:8081"
+      - "${BACKEND_MGMT_PORT:-8082}:8081"
     volumes:
       - backend_logs:/app/logs
     networks:
@@ -112,7 +112,7 @@ services:
       PMA_PASSWORD: ${MYSQL_PASSWORD:-bookstore123}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
     ports:
-      - "${PHPMYADMIN_PORT:-8081}:80"
+      - "${PHPMYADMIN_PORT:-8083}:80"
     depends_on:
       mysql:
         condition: service_healthy

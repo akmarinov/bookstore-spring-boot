@@ -81,5 +81,8 @@
   "bugs": {
     "url": "https://github.com/yourusername/bookstore-spring-boot/issues"
   },
-  "homepage": "https://github.com/yourusername/bookstore-spring-boot#readme"
+  "homepage": "https://github.com/yourusername/bookstore-spring-boot#readme",
+  "dependencies": {
+    "gensync": "^1.0.0-beta.2"
+  }
 }
