@@ -205,7 +205,7 @@ const BookForm: React.FC<BookFormProps> = ({
                   fullWidth
                   label="Price"
                   type="number"
-                  inputProps={{ step: 0.01, min: 0 }}
+                  inputProps={{ step: 0.01 }}
                   error={!!errors.price}
                   helperText={errors.price?.message}
                   disabled={loading || isViewMode}
@@ -220,9 +220,11 @@ const BookForm: React.FC<BookFormProps> = ({
               control={control}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.category}>
-                  <InputLabel>Category</InputLabel>
+                  <InputLabel id="category-label">Category</InputLabel>
                   <Select
                     {...field}
+                    labelId="category-label"
+                    id="category-select"
                     label="Category"
                     disabled={loading || isViewMode}
                   >

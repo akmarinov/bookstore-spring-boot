@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../test/utils';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
-import App from '../App';
+import { Routes, Route } from 'react-router-dom';
+import Layout from '../components/Layout';
+import HomePage from '../pages/HomePage';
+import AddBookPage from '../pages/AddBookPage';
+import EditBookPage from '../pages/EditBookPage';
 import { mockBooks } from '../test/mocks/mockData';
 
 // Mock the hooks used by components
@@ -17,13 +20,22 @@ vi.mock('../hooks/useBook', () => ({
   useBook: () => mockUseBook(),
 }));
 
-// Custom render for App with router
+// Create testable App content (without Router since test utils provide it)
+const AppContent = () => (
+  <Layout>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/add-book" element={<AddBookPage />} />
+      <Route path="/edit-book/:id" element={<EditBookPage />} />
+    </Routes>
+  </Layout>
+);
+
+// Custom render for App content with specific routes
 const renderApp = (initialEntries = ['/']) => {
-  return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <App />
-    </MemoryRouter>
-  );
+  return render(<AppContent />, { 
+    routerOptions: { initialEntries } 
+  });
 };
 
 describe('App Integration Tests', () => {
@@ -101,8 +113,8 @@ describe('App Integration Tests', () => {
       // Should be on add book page
       expect(screen.getByText('Add New Book')).toBeInTheDocument();
 
-      // Click home button
-      const homeButton = screen.getByRole('button', { name: /home/i });
+      // Click home button (the text button, not the icon)
+      const homeButton = screen.getByRole('button', { name: 'Home' });
       await user.click(homeButton);
 
       // Should navigate to home page

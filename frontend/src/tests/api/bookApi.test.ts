@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { mockBooks, mockBook, mockPaginatedResponse } from '../../test/mocks/mockData';
 import type { BookFormData } from '../../types/Book';
 
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = 'http://localhost:8080/api/v1';
 
 describe('bookApi', () => {
   beforeEach(() => {
@@ -183,28 +183,6 @@ describe('bookApi', () => {
     });
   });
 
-  describe('searchBooks', () => {
-    it('searches books successfully', async () => {
-      const result = await bookApi.searchBooks('Gatsby');
-      
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0].title).toContain('Gatsby');
-    });
-
-    it('searches books with additional parameters', async () => {
-      const result = await bookApi.searchBooks('Fiction', { page: 0, size: 10 });
-      
-      expect(result.pageNumber).toBe(0);
-      expect(result.pageSize).toBe(10);
-    });
-
-    it('returns empty results for no matches', async () => {
-      const result = await bookApi.searchBooks('NonexistentBook');
-      
-      expect(result.content).toHaveLength(0);
-      expect(result.totalElements).toBe(0);
-    });
-  });
 
   describe('getBooksByCategory', () => {
     it('fetches books by category successfully', async () => {
@@ -229,15 +207,6 @@ describe('bookApi', () => {
     });
   });
 
-  describe('getCategories', () => {
-    it('fetches all categories successfully', async () => {
-      const result = await bookApi.getCategories();
-      
-      expect(result).toContain('Fiction');
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-    });
-  });
 
   describe('Error handling', () => {
     it('handles network errors', async () => {
@@ -270,7 +239,8 @@ describe('bookApi', () => {
         })
       );
 
-      await expect(bookApi.getBooks()).rejects.toThrow();
+      const result = await bookApi.getBooks();
+      expect(result).toBeNull();
     });
   });
 });

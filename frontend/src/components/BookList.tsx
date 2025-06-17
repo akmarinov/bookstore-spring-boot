@@ -173,9 +173,11 @@ const BookList: React.FC<BookListProps> = ({ initialCategory, initialSearch }) =
           </Grid>
           <Grid item xs={12} md={4} lg={3}>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel id="category-filter-label">Category</InputLabel>
               <Select
                 value={selectedCategory}
+                labelId="category-filter-label"
+                id="category-filter-select"
                 label="Category"
                 onChange={handleCategoryChange}
                 startAdornment={<FilterList sx={{ mr: 1 }} />}

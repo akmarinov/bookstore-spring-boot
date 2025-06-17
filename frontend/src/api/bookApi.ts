@@ -39,13 +39,6 @@ export const bookApi = {
     await apiClient.delete(`/books/${id}`);
   },
 
-  // Search books by title or author
-  searchBooks: async (query: string, params?: GetBooksParams): Promise<PaginatedResponse<Book>> => {
-    const response = await apiClient.get('/books/search', {
-      params: { ...params, q: query }
-    });
-    return response.data;
-  },
 
   // Get books by category
   getBooksByCategory: async (category: string, params?: GetBooksParams): Promise<PaginatedResponse<Book>> => {
@@ -53,11 +46,6 @@ export const bookApi = {
     return response.data;
   },
 
-  // Get all categories
-  getCategories: async (): Promise<string[]> => {
-    const response = await apiClient.get('/books/categories');
-    return response.data;
-  },
 };
 
 export default bookApi;

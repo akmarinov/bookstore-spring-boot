@@ -3,6 +3,10 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './mocks/server';
 
+// Set environment variables for tests
+vi.stubEnv('VITE_API_URL', 'http://localhost:8080');
+vi.stubEnv('VITE_API_BASE_PATH', '/api/v1');
+
 // Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),

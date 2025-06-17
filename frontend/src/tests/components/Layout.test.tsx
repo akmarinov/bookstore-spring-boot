@@ -38,7 +38,7 @@ describe('Layout', () => {
       </Layout>
     );
 
-    expect(screen.getByRole('button', { name: /home/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add book/i })).toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('Layout', () => {
       </Layout>
     );
 
-    const homeButton = screen.getByRole('button', { name: /home/i });
+    const homeButton = screen.getByRole('button', { name: 'Home' });
     await user.click(homeButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -89,7 +89,7 @@ describe('Layout', () => {
       </Layout>
     );
 
-    const logoButton = screen.getByRole('button', { name: /home/i });
+    const logoButton = screen.getByRole('button', { name: 'home' });
     // Find the book icon button (logo)
     const bookIconButton = screen.getByLabelText('home');
     await user.click(bookIconButton);
@@ -107,7 +107,7 @@ describe('Layout', () => {
       </Layout>
     );
 
-    const homeButton = screen.getByRole('button', { name: /home/i });
+    const homeButton = screen.getByRole('button', { name: 'Home' });
     expect(homeButton).toHaveClass('MuiButton-outlined');
   });
 

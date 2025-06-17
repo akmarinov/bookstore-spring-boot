@@ -17,10 +17,22 @@ const testTheme = createTheme({
   },
 });
 
+interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
+  routerOptions?: {
+    initialEntries?: string[];
+  };
+}
+
 // Custom render function that includes providers
-const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+const AllTheProviders = ({ 
+  children, 
+  initialEntries = ['/'] 
+}: { 
+  children: React.ReactNode;
+  initialEntries?: string[];
+}) => {
   return (
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <ThemeProvider theme={testTheme}>
         <CssBaseline />
         {children}
@@ -31,8 +43,17 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
 
 const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllTheProviders, ...options });
+  options?: CustomRenderOptions
+) => {
+  const { routerOptions, ...renderOptions } = options || {};
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <AllTheProviders initialEntries={routerOptions?.initialEntries}>
+      {children}
+    </AllTheProviders>
+  );
+  
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
 
 export * from '@testing-library/react';
 export { customRender as render };

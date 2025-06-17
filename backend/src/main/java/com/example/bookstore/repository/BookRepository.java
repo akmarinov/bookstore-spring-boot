@@ -29,6 +29,11 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     Page<Book> findByCategoryContainingIgnoreCase(String category, Pageable pageable);
     
     /**
+     * Find books by exact category match (case-insensitive)
+     */
+    Page<Book> findByCategoryIgnoreCase(String category, Pageable pageable);
+    
+    /**
      * Find book by ISBN
      */
     Optional<Book> findByIsbn(String isbn);

@@ -14,7 +14,7 @@ export interface UseBooksReturn {
   refetch: () => Promise<void>;
 }
 
-export const useBooks = (): UseBooksReturn => {
+export const useBooks = (initialParams?: GetBooksParams): UseBooksReturn => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,10 +46,12 @@ export const useBooks = (): UseBooksReturn => {
     await fetchBooks(lastParams);
   }, [fetchBooks, lastParams]);
 
-  // Initial fetch with default parameters
+  // Initial fetch only if parameters are provided
   useEffect(() => {
-    fetchBooks({ page: 0, size: 12 });
-  }, [fetchBooks]);
+    if (initialParams) {
+      fetchBooks(initialParams);
+    }
+  }, [fetchBooks, initialParams]);
 
   return {
     books,

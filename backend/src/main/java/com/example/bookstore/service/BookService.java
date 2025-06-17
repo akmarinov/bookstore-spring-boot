@@ -133,7 +133,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public Page<Book> searchBooksByCategory(String category, Pageable pageable) {
         System.out.println("Searching books by category: " + category);
-        return bookRepository.findByCategoryContainingIgnoreCase(category, pageable);
+        return bookRepository.findByCategoryIgnoreCase(category, pageable);
     }
     
     /**

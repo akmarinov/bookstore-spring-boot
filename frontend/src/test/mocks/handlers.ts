@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { mockBooks, mockPaginatedResponse, mockBook, createMockPaginatedResponse } from './mockData';
 import type { Book, BookFormData } from '../../types/Book';
 
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = 'http://localhost:8080/api/v1';
 
 export const handlers = [
   // Get all books with pagination and filtering
@@ -108,31 +108,6 @@ export const handlers = [
     return HttpResponse.json({}, { status: 204 });
   }),
 
-  // Search books
-  http.get(`${BASE_URL}/books/search`, ({ request }) => {
-    const url = new URL(request.url);
-    const query = url.searchParams.get('q') || '';
-    const page = parseInt(url.searchParams.get('page') || '0');
-    const size = parseInt(url.searchParams.get('size') || '10');
-
-    const searchLower = query.toLowerCase();
-    const filteredBooks = mockBooks.filter(book =>
-      book.title.toLowerCase().includes(searchLower) ||
-      book.author.toLowerCase().includes(searchLower)
-    );
-
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
-
-    const response = createMockPaginatedResponse(paginatedBooks, filteredBooks.length);
-    response.pageNumber = page;
-    response.pageSize = size;
-    response.first = page === 0;
-    response.last = endIndex >= filteredBooks.length;
-
-    return HttpResponse.json(response);
-  }),
 
   // Get books by category
   http.get(`${BASE_URL}/books/category/:category`, ({ params, request }) => {
@@ -156,11 +131,6 @@ export const handlers = [
     return HttpResponse.json(response);
   }),
 
-  // Get categories
-  http.get(`${BASE_URL}/books/categories`, () => {
-    const categories = [...new Set(mockBooks.map(book => book.category))];
-    return HttpResponse.json(categories);
-  }),
 
   // Error handlers for testing error scenarios
   http.get(`${BASE_URL}/books/error`, () => {

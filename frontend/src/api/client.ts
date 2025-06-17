@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ErrorResponse } from '../types/Book';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${import.meta.env.VITE_API_BASE_PATH || '/api'}`;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${import.meta.env.VITE_API_BASE_PATH || '/api/v1'}`;
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);

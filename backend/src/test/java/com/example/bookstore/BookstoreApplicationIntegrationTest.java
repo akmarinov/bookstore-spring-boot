@@ -44,14 +44,15 @@ class BookstoreApplicationIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        bookRepository.deleteAll();
-    }
 
     @Nested
     @DisplayName("Full CRUD Integration Tests")
     class FullCrudIntegrationTests {
+        
+        @BeforeEach
+        void setUp() {
+            bookRepository.deleteAll();
+        }
 
         @Test
         @DisplayName("Should perform complete CRUD operations successfully")
@@ -189,7 +190,7 @@ class BookstoreApplicationIntegrationTest {
                     .andDo(print())
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content", hasSize(greaterThan(0))))
-                    .andExpect(jsonPath("$.content[0].category", is("Fiction")));
+                    .andExpect(jsonPath("$.content[*].category", everyItem(is("Fiction"))));
         }
 
         @Test
@@ -229,7 +230,7 @@ class BookstoreApplicationIntegrationTest {
                     .andExpect(jsonPath("$.number", is(0)))
                     .andExpect(jsonPath("$.size", is(2)))
                     .andExpect(jsonPath("$.totalElements", greaterThan(2)))
-                    .andExpect(jsonPath("$.hasNext", is(true)));
+                    .andExpect(jsonPath("$.last", is(false)));
 
             // Get second page
             mockMvc.perform(get("/api/v1/books")
